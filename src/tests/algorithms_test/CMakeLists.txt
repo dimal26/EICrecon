@@ -9,6 +9,7 @@ add_executable(
   calorimetry_ImagingTopoCluster.cc
   tracking_SiliconSimpleCluster.cc
   calorimetry_CalorimeterHitDigi.cc
+  calorimetry_SiPMResponse.cc
   calorimetry_CalorimeterClusterRecoCoG.cc
   calorimetry_CalorimeterClusterShape.cc
   calorimetry_HEXPLIT.cc

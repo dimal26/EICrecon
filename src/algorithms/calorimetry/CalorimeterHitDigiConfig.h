@@ -24,6 +24,13 @@ struct CalorimeterHitDigiConfig {
   double lightYield{0. / edm4eic::unit::GeV};
   double photonDetectionEfficiency{0.0}; // (light collection efficiency) x (quantum efficiency)
   unsigned long long numEffectiveSipmPixels{0};
+  // optional SiPM noise for readoutType "sipm" (all default to 0 = previous behaviour)
+  double sipmCrossTalk{0.0};       // prompt crosstalk probability per fired pixel
+  double sipmAfterpulse{0.0};      // afterpulse probability x recovery factor
+  double sipmDarkCounts{0.0};      // mean dark counts in the integration gate [p.e.]
+  double sipmNoiseSigma{0.0};      // electronics noise [p.e.]
+  bool sipmOccupancyFluctuation{false}; // binomial fluctuation of the number of fired pixels
+  bool sipmPoissonPhotons{false};       // Poisson number of photons reaching the SiPM (else fixed)
 
   // digitization settings
   unsigned int capADC{1};

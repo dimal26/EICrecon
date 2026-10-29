@@ -41,6 +41,13 @@ private:
                                                    config().photonDetectionEfficiency};
   ParameterRef<unsigned long long> m_numEffectiveSipmPixels{this, "numEffectiveSipmPixels",
                                                             config().numEffectiveSipmPixels};
+  ParameterRef<double> m_sipmCrossTalk{this, "sipmCrossTalk", config().sipmCrossTalk};
+  ParameterRef<double> m_sipmAfterpulse{this, "sipmAfterpulse", config().sipmAfterpulse};
+  ParameterRef<double> m_sipmDarkCounts{this, "sipmDarkCounts", config().sipmDarkCounts};
+  ParameterRef<double> m_sipmNoiseSigma{this, "sipmNoiseSigma", config().sipmNoiseSigma};
+  ParameterRef<bool> m_sipmOccupancyFluctuation{this, "sipmOccupancyFluctuation",
+                                                config().sipmOccupancyFluctuation};
+  ParameterRef<bool> m_sipmPoissonPhotons{this, "sipmPoissonPhotons", config().sipmPoissonPhotons};
 
   Service<AlgorithmsInit_service> m_algorithmsInit{this};
 

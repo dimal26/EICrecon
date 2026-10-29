@@ -244,7 +244,12 @@ void CalorimeterHitDigi::process(const CalorimeterHitDigi::Input& input,
                                             m_cfg.capADC),
                      0LL);
     } else if (readoutType == kSipmReadout) {
-      const long long int n_photons = edep * m_cfg.lightYield;
+      long long int n_photons = edep * m_cfg.lightYield;
+      if (m_cfg.sipmPoissonPhotons) {
+        // the number of photons reaching the sensor fluctuates (Poisson), PDE then thins it
+        std::poisson_distribution<long long> n_photons_dist(edep * m_cfg.lightYield);
+        n_photons = n_photons_dist(generator);
+      }
       std::binomial_distribution<> n_photons_detected_dist(n_photons,
                                                            m_cfg.photonDetectionEfficiency);
       const long long int n_photons_detected = n_photons_detected_dist(generator);
@@ -253,11 +258,35 @@ void CalorimeterHitDigi::process(const CalorimeterHitDigi::Input& input,
           (1 - exp(-n_photons_detected / (double)m_cfg.numEffectiveSipmPixels));
       const long long int n_max_photons =
           m_cfg.dyRangeADC * m_cfg.lightYield * m_cfg.photonDetectionEfficiency;
-      trace("n_photons_detected {}, n_pixels_fired {}, n_max_photons {}", n_photons_detected,
-            n_pixels_fired, n_max_photons);
-      adc = std::max(
-          std::llround(ped + n_pixels_fired * corrMeanScale_value / n_max_photons * m_cfg.capADC),
-          0LL);
+      // optional SiPM noise (all terms vanish with the default configuration)
+      double n_pixels_extra = 0;
+      if (m_cfg.sipmOccupancyFluctuation || m_cfg.sipmCrossTalk > 0 || m_cfg.sipmAfterpulse > 0 ||
+          m_cfg.sipmDarkCounts > 0 || m_cfg.sipmNoiseSigma > 0) {
+        const double npix   = static_cast<double>(m_cfg.numEffectiveSipmPixels);
+        const double lambda = n_photons_detected / npix;
+        const double el     = std::exp(-lambda);
+        if (m_cfg.sipmOccupancyFluctuation) {
+          // binomial spread of the number of distinct pixels hit: Npix (e^-l - (1+l) e^-2l)
+          n_pixels_extra +=
+              gaussian(generator) * std::sqrt(std::max(0., npix * (el - (1. + lambda) * el * el)));
+        }
+        // crosstalk only from free pixels, afterpulses from every avalanche
+        const double mu_corr = (m_cfg.sipmCrossTalk * el + m_cfg.sipmAfterpulse) * n_photons_detected;
+        if (mu_corr > 0) {
+          std::poisson_distribution<long long> corr_dist(mu_corr);
+          n_pixels_extra += corr_dist(generator);
+        }
+        if (m_cfg.sipmDarkCounts > 0) {
+          std::poisson_distribution<long long> dark_dist(m_cfg.sipmDarkCounts);
+          n_pixels_extra += dark_dist(generator);
+        }
+        n_pixels_extra += gaussian(generator) * m_cfg.sipmNoiseSigma;
+      }
+      trace("n_photons_detected {}, n_pixels_fired {}, extra {}, n_max_photons {}",
+            n_photons_detected, n_pixels_fired, n_pixels_extra, n_max_photons);
+      adc = std::max(std::llround(ped + (n_pixels_fired + n_pixels_extra) * corrMeanScale_value /
+                                            n_max_photons * m_cfg.capADC),
+                     0LL);
     }
 
     if (edep > 1.e-3) {
