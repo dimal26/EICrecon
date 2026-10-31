@@ -131,6 +131,7 @@ void InitPlugin(JApplication* app) {
       app));
 
   // invert the SiPM response and combine 3x15PS (A) with 10PS (B) -> standard B0ECalRecHits
+  // default: switch at E* = 40.7 GeV (resolution crossover for 0.2% gain and N_pix calibration)
   app->Add(new JOmniFactoryGeneratorT<CalorimeterSiPMCombiner_factory>(
       "B0ECalRecHits", {"B0ECalRecHits15PS", "B0ECalRecHits10PS"}, {"B0ECalRecHits"},
       {
@@ -148,7 +149,7 @@ void InitPlugin(JApplication* app) {
           .noiseSigmaB          = B0ECal_noiseSigma,
           .gainUncertainty      = 0.002,
           .numPixelsUncertainty = 0.002,
-          .mode                 = "weighted", // or "switch" with .switchEnergy, or "A" / "B"
+          .mode                 = "switch", // 3x15PS below switchEnergy, 10PS above; or "weighted", "A", "B"
           .switchEnergy         = 40.7 * dd4hep::GeV,
           .sampFrac             = 0.998,
       },
